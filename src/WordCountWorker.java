@@ -1,3 +1,4 @@
+import java.io.BufferedReader;
 import java.util.Scanner;
 
 /**
@@ -5,8 +6,13 @@ import java.util.Scanner;
  */
 public class WordCountWorker implements Runnable {
     private int chunkSize;
-    private int line;
-    private Scanner;
+    private int lineCount;
+    private BufferedReader br;
+    WordCountWorker(BufferedReader _br, int _chunkSize) {
+        br = _br;
+        chunkSize = _chunkSize;
+        lineCount = 0;
+    }
 
     public void run() {
 

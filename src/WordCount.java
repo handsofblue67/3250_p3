@@ -1,9 +1,8 @@
 /**
  * Created by Michael on 10/12/2015.
  */
-import java.io.FileNotFoundException;
-import java.io.File;
-import java.io.FileReader;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.concurrent.*;
 
 public class WordCount {
@@ -20,20 +19,29 @@ public class WordCount {
         ExecutorService tpes = Executors.newFixedThreadPool(Integer.parseInt(args[2]));
         File dir = new File(args[0]);
         File[] fileList = dir.listFiles();
-        FileReader reader = null;
+        BufferedReader br = null;
+        boolean endOfFile = false;
+        //create an array of WordCountWorker thread objects
+        ArrayList<WordCountWorker> workerList = new ArrayList<>();
+
+        for (int i = 0; i < Integer.parseInt(args[2]); ++i) {
+            workerList.add(new WordCountWorker(br, Integer.parseInt(args[1])));
+        }
 
         for (int i = 0; i < fileList.length; ++i) {
             File file = fileList[i];
             if(file.isFile()) {
                 try {
-                    reader = new FileReader(new File(file.getName()));
-                    while(reader.hasNext()) {
-
+                    br = new BufferedReader(new FileReader(file.getName()));
+                    while(!endOfFile) {
+                        //create each thread
                     }
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
-                } finally {
-                    FileReader.close();
+                } catch(IOException e) {
+                    e.printStackTrace();
+                }finally {
+                    br.close();
                 }
 
 
@@ -42,5 +50,4 @@ public class WordCount {
 
     }
 
-    }
 }
