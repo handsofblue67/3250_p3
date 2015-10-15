@@ -3,10 +3,11 @@
  */
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.concurrent.*;
 
 public class WordCount {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException, IOException {
         //args.length must be 3
         //create a treemap which all thread will add to, and will be printed out into the master output
         //create n threads, where n is args[2]
@@ -14,40 +15,32 @@ public class WordCount {
         thread1 gets thread size, and the chunk to process the stream
         */
 
-        int numTasks = Integer.parseInt(args[1]);
+        int chunkSize = Integer.parseInt(args[1]);
         //number of threads that will be in the pool
-        ExecutorService tpes = Executors.newFixedThreadPool(Integer.parseInt(args[2]));
+        ExecutorService exec = Executors.newFixedThreadPool(Integer.parseInt(args[2]));
         File dir = new File(args[0]);
         File[] fileList = dir.listFiles();
-        BufferedReader br = null;
+        Scanner scan = null;
+        int linesOfChunkRead = 0;
         boolean endOfFile = false;
-        //create an array of WordCountWorker thread objects
-        ArrayList<WordCountWorker> workerList = new ArrayList<>();
-
-        for (int i = 0; i < Integer.parseInt(args[2]); ++i) {
-            workerList.add(new WordCountWorker(br, Integer.parseInt(args[1])));
-        }
-
-        for (int i = 0; i < fileList.length; ++i) {
-            File file = fileList[i];
-            if(file.isFile()) {
-                try {
-                    br = new BufferedReader(new FileReader(file.getName()));
-                    while(!endOfFile) {
-                        //create each thread
+        String[] temp;
+        if(fileList != null) {
+            for (int i = 0; i < fileList.length; ++i) {
+                File file = fileList[i];
+                if (file.isFile()) {
+                    scan = new Scanner(new FileReader(file));
+                    ArrayList<String> chunk = new ArrayList();
+                    while (scan.hasNextLine() && linesOfChunkRead++ <= chunkSize) {
+                        chunk.add(scan.nextLine().trim());
                     }
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                } catch(IOException e) {
-                    e.printStackTrace();
-                }finally {
-                    br.close();
+                    if (linesOfChunkRead > chunkSize) {
+                        exec.submit(new WordCountWorker(chunk));
+                        linesOfChunkRead = 0;
+                    }
                 }
-
-
             }
+            exec.shutdown();
         }
-
     }
-
 }
+
