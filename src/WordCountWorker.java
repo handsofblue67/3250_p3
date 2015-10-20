@@ -1,5 +1,6 @@
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -7,48 +8,60 @@ import java.util.TreeMap;
  * Created by Michael on 10/12/2015.
  */
 public class WordCountWorker implements Runnable {
-    private ArrayList<String> chunk;
+    private String[] chunk;
     private TreeMap<String, Integer> counts;
-    private static Integer chunkNum;
-    private FileWriter fw;
+    private static Integer threadNum; //the unique thread number
+    private static TreeMap<String, Integer> results; //map treemap of the final output
+    private String fileName; //name of the original file
+    private static File output; //output folder
+    private File oFile; //output file
 
-    public WordCountWorker(ArrayList<String> _chunk) throws IOException {
-        chunk = _chunk;
-        counts = new TreeMap<>();
+    public WordCountWorker(Object[] _chunk, String _fileName) throws IOException {
         //increment the number of these threads created with a static, synchronized function
         increment();
-        fw = new FileWriter("chunk" + chunkNum + ".txt");
+        fileName = _fileName;
+        chunk = Arrays.copyOf(_chunk, _chunk.length, String[].class);
+        counts = new TreeMap<>();
+        if (output == null){
+            String current = System.getProperty("user.dir");
+            output = new File(current, "output");
+            output.mkdir();
+        }
+        oFile = new File (output, fileName + "_" + threadNum + ".chunk");
     }
-
 
     public void run() {
         for (String oneLine : chunk) {
             String[] line = oneLine.split("\\s+");
             for (String word : line) {
-                word.replaceAll("\\W+", "");
-                word.trim();
-                Integer freq = counts.get(word); //use word=key to get value=freq
-                if (freq == null) { //word doesn't exist
-                    counts.put(word, 1);
-                    WordCount.addResult(word, 1);
-                } else { //word exists, increment count
-                    counts.put(word, freq + 1);
+                word = word.replaceAll("\\d+", "");
+                word = word.replaceAll("\\W+", "");
+                if (!word.equals("")) {
+                    word.trim();
+                    Integer freq = counts.get(word); //use word=key to get value=freq
+                    if (freq == null) { //word doesn't exist
+                        counts.put(word, 1);
+                    } else { //word exists, increment count
+                        counts.put(word, freq + 1);
+                    }
+                    addResult(word);
                 }
             }
         }
         printChunk();
     }
 
-
     //call when chunk is fully processed to create a new file with the appropriate name, and write out all data from tree
     //may not need to be synchronized, but there to avoid bogging down the harddrive
     public synchronized void printChunk() {
         try {
+            FileWriter fw = new FileWriter(oFile);
             BufferedWriter outStream = new BufferedWriter(fw);
             for (Map.Entry<String, Integer> entry : counts.entrySet()) {
                 outStream.write(entry.getKey() + "\t" + entry.getValue() + System.getProperty("line.separator"));
             }
-            outStream.close();
+            fw.close();
+            //outStream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -57,11 +70,39 @@ public class WordCountWorker implements Runnable {
     //increment the number of total chunks created, synchronized to avoid error, as chunkNum is static
     //create the chunk file
     public static synchronized void increment() {
-        if (chunkNum == null) {
-            chunkNum = 0;
+        if (threadNum == null) {
+            threadNum = 0;
         }
-        ++chunkNum;
+        ++threadNum;
     }
 
+    public static TreeMap<String, Integer> getResults(){
+        return results;
+    }
+
+    //add a entry to the result tree, if the string key already exists, increment the value
+    public static synchronized void addResult(String _word) {
+        if (results == null) {
+            results = new TreeMap<>();
+        }
+        Integer _freq = results.get(_word);
+        if (_freq == null) {
+            results.put(_word, 1);
+        } else {
+            results.put(_word, _freq + 1);
+        }
+    }
+
+    public static void printResults() {
+        try {
+            BufferedWriter outStream = new BufferedWriter(new FileWriter(new File(output, "results.txt")));
+            for (Map.Entry<String, Integer> entry : WordCountWorker.getResults().entrySet()) {
+                outStream.write(entry.getKey() + "\t" + entry.getValue() + System.getProperty("line.separator"));
+            }
+            outStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
 

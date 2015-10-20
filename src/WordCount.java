@@ -5,11 +5,10 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.TreeMap;
 import java.util.concurrent.*;
 
 public class WordCount {
-    private static TreeMap<String, Integer> results;
+    //private static TreeMap<String, Integer> results;
     public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException {
         //args.length must be 3
         //create a treemap which all thread will add to, and will be printed out into the master output
@@ -22,51 +21,36 @@ public class WordCount {
         //number of threads that will be in the pool
         ExecutorService ex = Executors.newFixedThreadPool(Integer.parseInt(args[2]));
         File dir = new File(args[0]);
-        File[] fileList = dir.listFiles();
         Scanner scan = null;
-        int linesOfChunkRead = 0;
-        boolean endOfFile = false;
-        String[] temp;
-        if(fileList != null) {
-            for (int i = 0; i < fileList.length; ++i) {
-                File file = fileList[i];
-                if (file.isFile()) {
-                    scan = new Scanner(new FileReader(file));
-                    ArrayList<String> chunk = new ArrayList();
-                    while (scan.hasNextLine() && linesOfChunkRead++ < chunkSize) {
-                        chunk.add(scan.nextLine().toLowerCase());
-                    }
-                    if (linesOfChunkRead >= chunkSize) {
-                        ex.submit(new WordCountWorker(chunk));
-                        linesOfChunkRead = 0;
+        if (dir.isDirectory()) { //if a directory is to be processed
+            File[] fileList = dir.listFiles(); //create array of all of the files in the directory
+            ArrayList<String> chunk = new ArrayList<>(); //create new list to store a chunk of given size
+            for (File file : fileList) { //iterate through every file in the directory
+                scan = new Scanner(new FileReader(file)); //stream to current file
+                while (scan.hasNextLine()) { //while not the end of file, and chunk is not full
+                    chunk.add(scan.nextLine().toLowerCase()); //read one line into the list
+                    if (chunk.size() == chunkSize) { //if chunk size broke the loop
+                        ex.submit(new WordCountWorker(chunk.toArray(), file.getName())); //submit new thread to executor
+                        chunk.clear();
                     }
                 }
+                scan.close();
             }
-        }
-        ex.shutdown();
-        ex.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        try {
-            BufferedWriter outStream = new BufferedWriter(new FileWriter("results.txt"));
-            for (Map.Entry<String, Integer> entry : results.entrySet()) {
-                outStream.write(entry.getKey() + "\t" + entry.getValue() + System.getProperty("line.separator"));
+        } else if (dir.isFile()) { //if only one file is to be processed
+            scan = new Scanner(new FileReader(dir)); //create new stream
+            ArrayList<String> chunk = new ArrayList<>(); //create new list to hold the chunk
+            while (scan.hasNextLine()) { //loop until end of file
+                chunk.add(scan.nextLine().toLowerCase()); //add a line from file to chunk
+                if (chunk.size() == chunkSize) { //if current chunk is full
+                    ex.submit(new WordCountWorker(chunk.toArray(), dir.getName())); //submit new thread to executor
+                    chunk.clear();
+                }
             }
-            outStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            scan.close(); //close file
         }
-    }
-
-    //add a entry to the result tree, if the string key already exists, increment the value
-    public static synchronized void addResult(String _word, Integer _num) {
-        if (results == null) {
-            results = new TreeMap<>();
-        }
-        Integer _freq = results.get(_word);
-        if (_freq == null) {
-            results.put(_word, _num);
-        } else {
-            results.put(_word, _freq + 1);
-        }
+        ex.shutdown(); //ask executor to terminate
+        ex.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS); //wait for all processes to finish
+        WordCountWorker.printResults(); //print the final treemap from the WordCountWorker class
     }
 }
 
