@@ -34,6 +34,7 @@ public class WordCountWorker implements Runnable {
         for (String oneLine : chunk) {
             String[] line = oneLine.split("\\s+");
             for (String word : line) {
+                word = word.replaceAll("_", "");
                 word = word.replaceAll("\\d+", "");
                 word = word.replaceAll("\\W+", "");
                 if (!word.equals("")) {
