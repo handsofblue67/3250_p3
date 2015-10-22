@@ -1,27 +1,26 @@
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * Created by Michael on 10/12/2015.
  */
 public class WordCountWorker implements Runnable {
     private String[] chunk;
-    private TreeMap<String, Integer> counts;
+    private HashMap<String, Integer> counts;
     private static Integer threadNum; //the unique thread number
-    private static TreeMap<String, Integer> results; //map treemap of the final output
+    private static HashMap<String, Integer> results; //map treemap of the final output
     private String fileName; //name of the original file
     private static File output; //output folder
     private File oFile; //output file
+    private TreeSet<Pair> decend;
+    private static TreeSet<Pair> decendResults;
 
     public WordCountWorker(Object[] _chunk, String _fileName) throws IOException {
         //increment the number of these threads created with a static, synchronized function
         increment();
         fileName = _fileName;
         chunk = Arrays.copyOf(_chunk, _chunk.length, String[].class);
-        counts = new TreeMap<>();
+        counts = new HashMap<>();
         if (output == null){
             String current = System.getProperty("user.dir");
             output = new File(current, "output");
@@ -58,11 +57,16 @@ public class WordCountWorker implements Runnable {
         try {
             FileWriter fw = new FileWriter(oFile);
             BufferedWriter outStream = new BufferedWriter(fw);
+            decend = new TreeSet<>(new PairComparator());
             for (Map.Entry<String, Integer> entry : counts.entrySet()) {
-                outStream.write(entry.getKey() + "\t" + entry.getValue() + System.getProperty("line.separator"));
+                decend.add(new Pair(entry.getValue(), entry.getKey()));
             }
-            fw.close();
-            //outStream.close();
+
+            for (Pair _pair : decend) {
+                outStream.write(_pair.getWord() + "\t" + _pair.getInstances() + System.getProperty("line.separator"));
+            }
+
+            outStream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -77,28 +81,28 @@ public class WordCountWorker implements Runnable {
         ++threadNum;
     }
 
-    public static TreeMap<String, Integer> getResults(){
-        return results;
-    }
-
     //add a entry to the result tree, if the string key already exists, increment the value
     public static synchronized void addResult(String _word) {
-        if (results == null) {
-            results = new TreeMap<>();
+        if (results == null) { //create new results map(this is the large one that will be the final output
+            results = new HashMap<>();
         }
-        Integer _freq = results.get(_word);
-        if (_freq == null) {
+        Integer _freq = results.get(_word); //check to see if the word exists within the map
+        if (_freq == null) { //if the word is unique, insert with a value of 1
             results.put(_word, 1);
-        } else {
+        } else { //otherwise increment the value
             results.put(_word, _freq + 1);
         }
     }
 
     public static void printResults() {
-        try {
+        try { //print the results tree at the end of main
             BufferedWriter outStream = new BufferedWriter(new FileWriter(new File(output, "results.txt")));
-            for (Map.Entry<String, Integer> entry : WordCountWorker.getResults().entrySet()) {
-                outStream.write(entry.getKey() + "\t" + entry.getValue() + System.getProperty("line.separator"));
+            decendResults = new TreeSet<>(new PairComparator());
+            for (Map.Entry<String, Integer> entry : results.entrySet()) {
+                decendResults.add(new Pair(entry.getValue(), entry.getKey()));
+            }
+            for (Pair _pair : decendResults) {
+                outStream.write(_pair.getWord() + "\t" + _pair.getInstances() + System.getProperty("line.separator"));
             }
             outStream.close();
         } catch (IOException e) {
