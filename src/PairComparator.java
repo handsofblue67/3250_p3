@@ -6,10 +6,10 @@ public class PairComparator implements Comparator<Pair> {
     @Override
     public int compare(Pair o1, Pair o2) {
         if (o1.getInstances() > o2.getInstances()) {
-            return 1;
+            return -1;
         }
         else {
-            return -1;
+            return 1;
         }
     }
 }
