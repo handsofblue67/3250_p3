@@ -3,40 +3,45 @@ import java.util.*;
 
 /**
  * Created by Michael on 10/12/2015.
+ * Multiple instances of this class are able to be run.
+ * To be passes an array of strings (making a chunk)
+ * The class will remove non-word characters count the frequency of each word, and then sort according to the frequency
  */
+
 public class WordCountWorker implements Runnable {
-    private String[] chunk;
-    private HashMap<String, Integer> counts;
+    private String[] chunk; //holds the unsorted, raw chunk to be separated, each index can contain a line of text
     private static Integer threadNum; //the unique thread number
-    private static HashMap<String, Integer> results; //map treemap of the final output
-    private String fileName; //name of the original file
+    private HashMap<String, Integer> counts; //the structure used to count the words
+    private static HashMap<String, Integer> results; //the structure used to count the words for the final results file (combines all chunk results)
+    private String fileName; //name of the original file, for naming the chunk output file
     private static File output; //output folder
     private File oFile; //output file
     private TreeSet<Pair> decend;
     private static TreeSet<Pair> decendResults;
 
+    //constructor for a WordCountWorker object/thread
     public WordCountWorker(Object[] _chunk, String _fileName) throws IOException {
-        //increment the number of these threads created with a static, synchronized function
-        increment();
-        fileName = _fileName;
-        chunk = Arrays.copyOf(_chunk, _chunk.length, String[].class);
-        counts = new HashMap<>();
-        if (output == null){
-            String current = System.getProperty("user.dir");
+        /* increment the number of these threads created with a static, synchronized function
+        create a unique file name, based on the original file being processed, and the thread number*/
+        fileName = _fileName + "_" + increment() + ".chunk";
+        if (output == null){ //create new folder in the working directory to store the ouput files
+            String current = System.getProperty("user.dir"); //get working directory
             output = new File(current, "output");
             output.mkdir();
         }
-        oFile = new File (output, fileName + "_" + threadNum + ".chunk");
+        oFile = new File (output, fileName); //add new file to the output directory
+        chunk = Arrays.copyOf(_chunk, _chunk.length, String[].class); //parse the array of objects to o an array of strings
+        counts = new HashMap<>();
     }
 
     public void run() {
         for (String oneLine : chunk) {
-            String[] line = oneLine.split("\\s+");
+            String[] line = oneLine.split("\\s+"); //split lines into individual words
             for (String word : line) {
-                word = word.replaceAll("_", "");
-                word = word.replaceAll("\\d+", "");
-                word = word.replaceAll("\\W+", "");
-                if (!word.equals("")) {
+                word = word.replaceAll("_", ""); //remove underscores (not removed by \\W for some reason
+                word = word.replaceAll("\\d+", ""); //remove numbers
+                word = word.replaceAll("\\W+", ""); //remove non-word characters
+                if (!word.equals("")) { //ignore all null strings
                     word.trim();
                     Integer freq = counts.get(word); //use word=key to get value=freq
                     if (freq == null) { //word doesn't exist
@@ -48,7 +53,7 @@ public class WordCountWorker implements Runnable {
                 }
             }
         }
-        printChunk();
+        printChunk(); // write processed chunk to file
     }
 
     //call when chunk is fully processed to create a new file with the appropriate name, and write out all data from tree
@@ -57,16 +62,16 @@ public class WordCountWorker implements Runnable {
         try {
             FileWriter fw = new FileWriter(oFile);
             BufferedWriter outStream = new BufferedWriter(fw);
-            decend = new TreeSet<>(new PairComparator());
+            decend = new TreeSet<>(new PairComparator()); //treeset will sort the pre-counted words according to frequency
             for (Map.Entry<String, Integer> entry : counts.entrySet()) {
-                decend.add(new Pair(entry.getValue(), entry.getKey()));
+                decend.add(new Pair(entry.getValue(), entry.getKey())); //store each key and value (count and word) into Pair object, the sort into tree
             }
 
-            for (Pair _pair : decend) {
+            for (Pair _pair : decend) { //after sorting is complete, write out to chunk file
                 outStream.write(_pair.getWord() + "\t" + _pair.getInstances() + System.getProperty("line.separator"));
             }
 
-            outStream.close();
+            outStream.close(); //close stream
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -74,11 +79,11 @@ public class WordCountWorker implements Runnable {
 
     //increment the number of total chunks created, synchronized to avoid error, as chunkNum is static
     //create the chunk file
-    public static synchronized void increment() {
+    public static synchronized Integer increment() {
         if (threadNum == null) {
             threadNum = 0;
         }
-        ++threadNum;
+        return ++threadNum;
     }
 
     //add a entry to the result tree, if the string key already exists, increment the value
@@ -94,6 +99,8 @@ public class WordCountWorker implements Runnable {
         }
     }
 
+    //print results function
+    //to be called as generic "WordClassWorker" after all processing is complete
     public static void printResults() {
         try { //print the results tree at the end of main
             BufferedWriter outStream = new BufferedWriter(new FileWriter(new File(output, "results.txt")));

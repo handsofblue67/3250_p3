@@ -3,16 +3,15 @@
  */
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.*;
 
 public class WordCount {
     //private static TreeMap<String, Integer> results;
-    public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         //args.length must be 3
-        //create a treemap which all thread will add to, and will be printed out into the master output
         //create n threads, where n is args[2]
+
         /*each thread will be passed a chunk size decided by args[1]
         thread1 gets thread size, and the chunk to process the stream
         */
@@ -50,7 +49,8 @@ public class WordCount {
         }
         ex.shutdown(); //ask executor to terminate
         ex.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS); //wait for all processes to finish
-        WordCountWorker.printResults(); //print the final treemap from the WordCountWorker class
+
+        WordCountWorker.printResults(); //print the final tree from the WordCountWorker class
     }
 }
 
