@@ -3,6 +3,7 @@
  */
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Scanner;
 import java.util.concurrent.*;
 
@@ -23,6 +24,7 @@ public class WordCount {
         Scanner scan = null;
         if (dir.isDirectory()) { //if a directory is to be processed
             File[] fileList = dir.listFiles(); //create array of all of the files in the directory
+            Arrays.sort(fileList);
             ArrayList<String> chunk = new ArrayList<>(); //create new list to store a chunk of given size
             for (File file : fileList) { //iterate through every file in the directory
                 scan = new Scanner(new FileReader(file)); //stream to current file
@@ -34,6 +36,10 @@ public class WordCount {
                     }
                 }
                 scan.close();
+                if (chunk != null && chunk.size() != chunkSize) {
+                    ex.submit(new WordCountWorker(chunk.toArray(), file.getName())); // submit partial chunk if reached end of a file
+                    chunk.clear();
+                }
             }
         } else if (dir.isFile()) { //if only one file is to be processed
             scan = new Scanner(new FileReader(dir)); //create new stream
@@ -49,7 +55,6 @@ public class WordCount {
         }
         ex.shutdown(); //ask executor to terminate
         ex.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS); //wait for all processes to finish
-
         WordCountWorker.printResults(); //print the final tree from the WordCountWorker class
     }
 }
