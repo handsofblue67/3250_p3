@@ -10,7 +10,6 @@ import java.util.*;
 
 public class WordCountWorker implements Runnable {
     private String[] chunk; //holds the unsorted, raw chunk to be separated, each index can contain a line of text
-    private static Integer threadNum; //the unique thread number
     private HashMap<String, Integer> counts; //the structure used to count the words
     private static HashMap<String, Integer> results; //the structure used to count the words for the final results file (combines all chunk results)
     private String fileName; //name of the original file, for naming the chunk output file
@@ -20,18 +19,18 @@ public class WordCountWorker implements Runnable {
     private static TreeSet<Pair> decendResults;
 
     //constructor for a WordCountWorker object/thread
-    public WordCountWorker(Object[] _chunk, String fileName) throws IOException {
+    public WordCountWorker(Object[] chunk, String fileName) throws IOException {
         /* increment the number of these threads created with a static, synchronized function
         create a unique file name, based on the original file being processed, and the thread number*/
-        this.fileName = fileName + "_" + increment() + ".chunk";
+        this.fileName = fileName;
         if (output == null){ //create new folder in the working directory to store the ouput files
             String current = System.getProperty("user.dir"); //get working directory
             output = new File(current, "output");
             output.mkdir();
         }
-        oFile = new File (output, fileName); //add new file to the output directory
-        chunk = Arrays.copyOf(_chunk, _chunk.length, String[].class); //parse the array of objects to o an array of strings
-        counts = new HashMap<>();
+        this.oFile = new File (output, fileName); //add new file to the output directory
+        this.chunk = Arrays.copyOf(chunk, chunk.length, String[].class); //parse the array of objects to o an array of strings
+        this.counts = new HashMap<>();
     }
 
     public void run() {
@@ -75,16 +74,6 @@ public class WordCountWorker implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    //increment the number of total chunks created, synchronized to avoid error, as chunkNum is static
-    //create the chunk file
-    //TODO: thread number should restart at 0 for every file
-    public static synchronized Integer increment() {
-        if (threadNum == null) {
-            threadNum = 0;
-        }
-        return ++threadNum;
     }
 
     //add a entry to the result tree, if the string key already exists, increment the value
