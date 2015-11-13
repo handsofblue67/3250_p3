@@ -46,7 +46,7 @@ public class WordCount {
             ArrayList<String> chunk = new ArrayList<>(); //create new list to hold the chunk
             while (scan.hasNextLine()) { //loop until end of file
                 chunk.add(scan.nextLine().toLowerCase()); //add a line from file to chunk
-                if (chunk.size() == chunkSize) { //if current chunk is full
+                if (chunk.size() == chunkSize || !scan.hasNextLine()) { //if chunk size broke the loop
                     ex.submit(new WordCountWorker(chunk.toArray(), dir.getName())); //submit new thread to executor
                     chunk.clear();
                 }
@@ -58,4 +58,3 @@ public class WordCount {
         WordCountWorker.printResults(); //print the final tree from the WordCountWorker class
     }
 }
-

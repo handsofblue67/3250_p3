@@ -20,10 +20,10 @@ public class WordCountWorker implements Runnable {
     private static TreeSet<Pair> decendResults;
 
     //constructor for a WordCountWorker object/thread
-    public WordCountWorker(Object[] _chunk, String _fileName) throws IOException {
+    public WordCountWorker(Object[] _chunk, String fileName) throws IOException {
         /* increment the number of these threads created with a static, synchronized function
         create a unique file name, based on the original file being processed, and the thread number*/
-        fileName = _fileName + "_" + increment() + ".chunk";
+        this.fileName = fileName + "_" + increment() + ".chunk";
         if (output == null){ //create new folder in the working directory to store the ouput files
             String current = System.getProperty("user.dir"); //get working directory
             output = new File(current, "output");
@@ -79,6 +79,7 @@ public class WordCountWorker implements Runnable {
 
     //increment the number of total chunks created, synchronized to avoid error, as chunkNum is static
     //create the chunk file
+    //TODO: thread number should restart at 0 for every file
     public static synchronized Integer increment() {
         if (threadNum == null) {
             threadNum = 0;
