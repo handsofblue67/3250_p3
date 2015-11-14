@@ -30,13 +30,13 @@ public class WordCount {
                         while (scan.hasNextLine()) { //while not the end of file, and chunk is not full
                             chunk.add(scan.nextLine().toLowerCase()); //read one line into the list
                             if (chunk.size() == chunkSize) { //if chunk size broke the loop
-                                ex.submit(new WordCountWorker(chunk.toArray(), String.format("'%s'_'%s'.chunk", file.getName(), chunkNum++))); //submit new thread to executor
+                                ex.submit(new WordCountWorker(chunk.toArray(), String.format("%s_%s.chunk", file.getName(), chunkNum++))); //submit new thread to executor
                                 chunk.clear();
                             }
                         }
                         scan.close();
                         if (chunk != null && chunk.size() != chunkSize) {
-                            ex.submit(new WordCountWorker(chunk.toArray(), String.format("'%s'_'%s'.chunk", file.getName(), chunkNum++))); //submit new thread to executor); // submit partial chunk if reached end of a file
+                            ex.submit(new WordCountWorker(chunk.toArray(), String.format("%s_%s.chunk", file.getName(), chunkNum++))); //submit new thread to executor); // submit partial chunk if reached end of a file
                             chunk.clear();
                         }
                     }
