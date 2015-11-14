@@ -15,8 +15,6 @@ public class WordCountWorker implements Runnable {
     private String fileName; //name of the original file, for naming the chunk output file
     private static File output; //output folder
     private File oFile; //output file
-    private TreeSet<Pair> decend;
-    private static TreeSet<Pair> decendResults;
 
     //constructor for a WordCountWorker object/thread
     public WordCountWorker(Object[] chunk, String fileName) throws IOException {
@@ -27,6 +25,9 @@ public class WordCountWorker implements Runnable {
             String current = System.getProperty("user.dir"); //get working directory
             output = new File(current, "output");
             output.mkdir();
+            for (File file : output.listFiles()) {
+                file.delete();
+            }
         }
         this.oFile = new File (output, fileName); //add new file to the output directory
         this.chunk = Arrays.copyOf(chunk, chunk.length, String[].class); //parse the array of objects to o an array of strings
@@ -61,7 +62,7 @@ public class WordCountWorker implements Runnable {
         try {
             FileWriter fw = new FileWriter(oFile);
             BufferedWriter outStream = new BufferedWriter(fw);
-            decend = new TreeSet<>(new PairComparator()); //treeset will sort the pre-counted words according to frequency
+            TreeSet<Pair> decend = new TreeSet<>(new PairComparator());
             for (Map.Entry<String, Integer> entry : counts.entrySet()) {
                 decend.add(new Pair(entry.getValue(), entry.getKey())); //store each key and value (count and word) into Pair object, the sort into tree
             }
@@ -94,7 +95,7 @@ public class WordCountWorker implements Runnable {
     public static void printResults() {
         try { //print the results tree at the end of main
             BufferedWriter outStream = new BufferedWriter(new FileWriter(new File(output, "results.txt")));
-            decendResults = new TreeSet<>(new PairComparator());
+            TreeSet<Pair> decendResults = new TreeSet<>(new PairComparator());
             for (Map.Entry<String, Integer> entry : results.entrySet()) {
                 decendResults.add(new Pair(entry.getValue(), entry.getKey()));
             }
