@@ -50,12 +50,12 @@ public class WordCount {
                 scan.close(); //close file
             }
             final long endReadTime = System.currentTimeMillis();
-            System.out.println(String.format("main finished reading the file/directory, and it took: %s seconds",  (endReadTime - startTime) / 1000));
+            System.out.println(String.format("main finished reading the file/directory, and it took: %s:%s seconds",  (endReadTime - startTime) / 1000, (endReadTime - startTime) % 1000));
             ex.shutdown(); //ask executor to terminate
             ex.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS); //wait for all processes to finish
             WordCountWorker.printResults(); //print the final tree from the WordCountWorker class
             final long endTime = System.currentTimeMillis();
-            System.out.println(String.format("total execution time: %s seconds",  (endTime - startTime) / 1000));
+            System.out.println(String.format("total execution time: %s:%s seconds",  (endTime - startTime) / 1000, (endTime - startTime) % 1000));
 
         } catch (Exception e){
             if (e.toString().equals("java.lang.NullPointerException")) {
