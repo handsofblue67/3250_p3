@@ -1,5 +1,6 @@
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by Michael on 10/12/2015.
@@ -11,16 +12,14 @@ import java.util.*;
 public class WordCountWorker implements Runnable {
     private String[] chunk; //holds the unsorted, raw chunk to be separated, each index can contain a line of text
     private HashMap<String, Integer> counts; //the structure used to count the words
-    private static HashMap<String, Integer> results; //the structure used to count the words for the final results file (combines all chunk results)
-    private String fileName; //name of the original file, for naming the chunk output file
+    private static ConcurrentHashMap<String, Integer> results; //the structure used to count the words for the final results file (combines all chunk results)
     private static File output; //output folder
     private File oFile; //output file
 
     //constructor for a WordCountWorker object/thread
-    public WordCountWorker(Object[] chunk, String fileName) throws IOException {
+    public WordCountWorker(String[] chunk, String fileName) throws IOException {
         /* increment the number of these threads created with a static, synchronized function
         create a unique file name, based on the original file being processed, and the thread number*/
-        this.fileName = fileName;
         if (output == null){ //create new folder in the working directory to store the ouput files
             String current = System.getProperty("user.dir"); //get working directory
             output = new File(current, "output");
@@ -80,7 +79,7 @@ public class WordCountWorker implements Runnable {
     //add a entry to the result tree, if the string key already exists, increment the value
     public static synchronized void addResult(String _word) {
         if (results == null) { //create new results map(this is the large one that will be the final output
-            results = new HashMap<>();
+            results = new ConcurrentHashMap<>();
         }
         Integer _freq = results.get(_word); //check to see if the word exists within the map
         if (_freq == null) { //if the word is unique, insert with a value of 1
